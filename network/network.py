@@ -13,7 +13,6 @@ from sklearn.manifold import MDS
 from sklearn.ensemble import ExtraTreesClassifier
 
 
-
 def create_multilayer_perceptron(dataType):
     if dataType == DataType.MNIST:
         input_shape = 784
@@ -32,7 +31,8 @@ def create_multilayer_perceptron(dataType):
     model.add(Dense(10, activation='softmax'))
 
     optimizer = SGD(lr=0.01, momentum=0.9, decay=10e-9)
-    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=optimizer, metrics=['accuracy'])
 
     return model
 
@@ -62,7 +62,8 @@ def create_cnn(dataType):
     model.add(Dense(10, activation='softmax'))
 
     optimizer = SGD(lr=0.01, momentum=0.9, decay=10e-6)
-    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=optimizer, metrics=['accuracy'])
 
     return model
 
@@ -72,15 +73,15 @@ def load_model_from_file(model_name, epochs):
 
 
 def train_model(model, batch_size, epochs, model_name, X_train, Y_train):
-    weights_path = MODEL_PATH_PREFIX + model_name + "_" + str(epochs) + "_{epoch:2d}.hdf5"
+    weights_path = MODEL_PATH_PREFIX + model_name + \
+        "_" + str(epochs) + "_{epoch:2d}.hdf5"
     checkpoint = ModelCheckpoint(weights_path, monitor='val_accuracy', verbose=1, save_best_only=False,
                                  save_weights_only=True, mode='auto')
 
-    X_train, X_val, Y_train, Y_val = train_test_split(X_train, Y_train, train_size=5 / 6)
+    X_train, X_val, Y_train, Y_val = train_test_split(
+        X_train, Y_train, train_size=5 / 6)
     network_history = model.fit(X_train, Y_train, batch_size=batch_size, epochs=epochs, verbose=1,
                                 validation_data=(X_val, Y_val), callbacks=[checkpoint])
-
-
 
     model.save(MODEL_PATH_PREFIX + model_name + "_" + str(epochs))
     save_network_history_to_file(network_history, model_name, epochs)
@@ -89,7 +90,8 @@ def train_model(model, batch_size, epochs, model_name, X_train, Y_train):
 def save_network_history_to_file(network_history, model_name, epochs):
     hist_df = pd.DataFrame(network_history.history)
 
-    hist_json_file = MODEL_PATH_PREFIX + model_name + "_" + str(epochs) + "_history.json"
+    hist_json_file = MODEL_PATH_PREFIX + model_name + \
+        "_" + str(epochs) + "_history.json"
     with open(hist_json_file, mode='w') as file:
         hist_df.to_json(file)
 
@@ -99,17 +101,19 @@ def load_network_history_from_file(model_name, epochs):
 
 
 def predict_classes(model, X):
-    return model.predict_classes(X)
+    return np.argmax(model.predict(X), axis=-1)
 
 
 def load_weights_from_file(model, model_name, epochs, epoch):
-    model.load_weights(MODEL_PATH_PREFIX + model_name + "/" + "model_" + model_name + "_" + str(epochs) + "_" + str(epoch) + ".hdf5")
+    model.load_weights(MODEL_PATH_PREFIX + model_name + "/" + "model_" +
+                       model_name + "_" + str(epochs) + "_" + str(epoch) + ".hdf5")
+
 
 def create_neuron_projection(layer):
     coef = np.corrcoef(np.transpose(layer))
     for ix, iy in np.ndindex(coef.shape):
         coef[ix, iy] = 1 - abs(coef[ix, iy])
-        if np.isnan(coef[ix,iy]):
+        if np.isnan(coef[ix, iy]):
             coef[ix, iy] = 0
     embedding = MDS(n_components=2, dissimilarity='precomputed')
     X_transformed = embedding.fit_transform(coef)
